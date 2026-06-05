@@ -1,0 +1,8 @@
+traefik:
+  url: http://localhost:8080
+  poll_interval: 5s
+  # username: admin      # optional HTTP basic auth
+  # password: secret
+
+docker:
+  socket: /var/run/docker.sock
