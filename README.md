@@ -4,6 +4,22 @@ A terminal dashboard for [Traefik](https://traefik.io/) — inspect routers, ser
 
 ![Porthole TUI](docs/porthole.png)
 
+```text
+ 1:Routers   2:Services   3:Certs   4:Containers               ⚓ porthole
+┌──────────────────────────────────────────────────────────────────────────┐
+│ RULE                                    SERVICE              TLS   STATUS │
+│──────────────────────────────────────────────────────────────────────────│
+│ Host(`api.example.com`)                 api-service@docker    ✓   enabled │
+│ Host(`app.example.com`) && PathPre...   frontend@docker       ✓   enabled │
+│ Host(`admin.example.com`)               admin@docker          ✓   enabled │
+│ Host(`metrics.example.com`)             prometheus@docker     —   enabled │
+│ Host(`old.example.com`)                 legacy@docker         ✓  disabled │
+│                                                                           │
+│                                                                           │
+└──────────────────────────────────────────────────────────────────────────┘
+  ↑↓/jk move  tab next  / filter  r refresh  ? help  q quit   updated 14:23:01
+```
+
 ## Features
 
 - **Routers** — routing rules, TLS status, attached middlewares, and enabled/disabled state
