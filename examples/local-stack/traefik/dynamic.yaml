@@ -1,0 +1,56 @@
+http:
+  routers:
+    frontend:
+      rule: Host(`frontend.localhost`)
+      entryPoints:
+        - websecure
+      service: frontend
+      middlewares:
+        - frontend-security
+      tls: {}
+    backend-host:
+      rule: Host(`api.localhost`)
+      entryPoints:
+        - websecure
+      service: backend
+      middlewares:
+        - backend-headers
+      tls: {}
+    backend-api:
+      rule: Host(`frontend.localhost`) && PathPrefix(`/api`)
+      entryPoints:
+        - websecure
+      service: backend
+      middlewares:
+        - backend-strip
+        - backend-headers
+      tls: {}
+
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: http://frontend:3000
+    backend:
+      loadBalancer:
+        servers:
+          - url: http://backend:8000
+
+  middlewares:
+    frontend-security:
+      headers:
+        contentTypeNosniff: true
+        browserXssFilter: true
+    backend-headers:
+      headers:
+        customResponseHeaders:
+          X-Porthole-Example: backend
+    backend-strip:
+      stripPrefix:
+        prefixes:
+          - /api
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/localstack.crt
+      keyFile: /etc/traefik/certs/localstack.key

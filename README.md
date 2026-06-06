@@ -56,7 +56,7 @@ cp .porthole.yaml.example .porthole.yaml
 
 ```yaml
 traefik:
-  url: http://localhost:8080   # Traefik API endpoint
+  url: http://127.0.0.1:8080   # Traefik API endpoint
   poll_interval: 5s
   # username: admin            # optional HTTP basic auth
   # password: secret
@@ -72,6 +72,30 @@ Porthole looks for `.porthole.yaml` in the current directory, `$HOME`, or any st
 ```sh
 porthole
 ```
+
+## Local Demo
+
+A self-contained demo stack lives in `examples/local-stack/`. It runs:
+
+- Traefik with the dashboard/API on `http://127.0.0.1:8080`
+- a React frontend on `https://frontend.localhost`
+- a Python backend on `https://api.localhost`
+- a local TLS certificate so the Certs tab has real data
+
+Start the stack:
+
+```sh
+docker compose -f examples/local-stack/compose.yaml up --build
+```
+
+Point `porthole` at the demo:
+
+```sh
+cp examples/local-stack/.porthole.yaml.example .porthole.yaml
+./porthole
+```
+
+See [examples/local-stack/README.md](examples/local-stack/README.md) for the full walkthrough.
 
 ### Keybindings
 

@@ -2,17 +2,21 @@ package provider
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kjaniec-dev/porthole/internal/config"
 )
 
 type TraefikClient struct {
-	baseURL string
-	http    *http.Client
+	baseURL          string
+	http             *http.Client
+	certificateFiles []string
 }
 
 func NewTraefikClient(cfg config.TraefikConfig) *TraefikClient {
@@ -20,7 +24,11 @@ func NewTraefikClient(cfg config.TraefikConfig) *TraefikClient {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Timeout: 10 * time.Second, Transport: transport}
-	return &TraefikClient{baseURL: cfg.URL, http: client}
+	return &TraefikClient{
+		baseURL:          cfg.URL,
+		http:             client,
+		certificateFiles: cfg.CertificateFiles,
+	}
 }
 
 func (t *TraefikClient) get(path string, out any) error {
@@ -69,7 +77,10 @@ func (t *TraefikClient) Certificates() ([]Certificate, error) {
 	}
 
 	if err := t.get("/api/tls/certificates", &raw); err != nil {
-		return nil, err
+		if len(t.certificateFiles) == 0 {
+			return nil, err
+		}
+		return certificatesFromFiles(t.certificateFiles)
 	}
 
 	var certs []Certificate
@@ -88,6 +99,60 @@ func (t *TraefikClient) Certificates() ([]Certificate, error) {
 			})
 		}
 	}
+	return certs, nil
+}
+
+func certificatesFromFiles(paths []string) ([]Certificate, error) {
+	var certs []Certificate
+
+	for _, path := range paths {
+		pemBytes, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+
+		found := false
+		for len(pemBytes) > 0 {
+			var block *pem.Block
+			block, pemBytes = pem.Decode(pemBytes)
+			if block == nil {
+				break
+			}
+			if block.Type != "CERTIFICATE" {
+				continue
+			}
+
+			parsed, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				return nil, err
+			}
+
+			found = true
+			domain := parsed.Subject.CommonName
+			if domain == "" && len(parsed.DNSNames) > 0 {
+				domain = parsed.DNSNames[0]
+			}
+
+			certs = append(certs, Certificate{
+				Subject: CertSubject{
+					CommonName: parsed.Subject.CommonName,
+				},
+				SANs:      parsed.DNSNames,
+				NotAfter:  parsed.NotAfter,
+				NotBefore: parsed.NotBefore,
+				Issuer: CertSubject{
+					CommonName: parsed.Issuer.CommonName,
+				},
+				Store:  "file",
+				Domain: domain,
+			})
+		}
+
+		if !found {
+			return nil, fmt.Errorf("no certificate blocks found in %s", path)
+		}
+	}
+
 	return certs, nil
 }
 

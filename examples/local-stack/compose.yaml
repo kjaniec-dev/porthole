@@ -1,0 +1,21 @@
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - --configFile=/etc/traefik/traefik.yaml
+    ports:
+      - 127.0.0.1:80:80
+      - 127.0.0.1:443:443
+      - 127.0.0.1:8080:8080
+    volumes:
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./traefik/dynamic.yaml:/etc/traefik/dynamic.yaml:ro
+      - ./traefik/certs:/etc/traefik/certs:ro
+
+  frontend:
+    build:
+      context: ./frontend
+
+  backend:
+    build:
+      context: ./backend

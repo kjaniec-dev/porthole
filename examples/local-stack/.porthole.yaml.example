@@ -1,0 +1,8 @@
+traefik:
+  url: http://127.0.0.1:8080
+  poll_interval: 2s
+  certificate_files:
+    - examples/local-stack/traefik/certs/localstack.crt
+
+docker:
+  socket: /var/run/docker.sock

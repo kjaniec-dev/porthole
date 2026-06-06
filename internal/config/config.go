@@ -12,10 +12,11 @@ type Config struct {
 }
 
 type TraefikConfig struct {
-	URL          string        `mapstructure:"url"`
-	PollInterval time.Duration `mapstructure:"poll_interval"`
-	Username     string        `mapstructure:"username"`
-	Password     string        `mapstructure:"password"`
+	URL              string        `mapstructure:"url"`
+	PollInterval     time.Duration `mapstructure:"poll_interval"`
+	Username         string        `mapstructure:"username"`
+	Password         string        `mapstructure:"password"`
+	CertificateFiles []string      `mapstructure:"certificate_files"`
 }
 
 type DockerConfig struct {
@@ -29,7 +30,7 @@ func Load() (*Config, error) {
 	v.AddConfigPath(".")
 	v.AddConfigPath("$HOME")
 
-	v.SetDefault("traefik.url", "http://localhost:8080")
+	v.SetDefault("traefik.url", "http://127.0.0.1:8080")
 	v.SetDefault("traefik.poll_interval", 5*time.Second)
 	v.SetDefault("docker.socket", "/var/run/docker.sock")
 
