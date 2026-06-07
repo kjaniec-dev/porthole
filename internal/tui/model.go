@@ -37,7 +37,8 @@ type dataMsg struct {
 
 type Model struct {
 	cfg          *config.Config
-	traefik      *provider.TraefikClient
+	prov         provider.Provider
+	pollInterval time.Duration
 	dockerClient *docker.Client
 	dockerErr    error
 
@@ -70,11 +71,22 @@ func New(cfg *config.Config) *Model {
 
 	tableHeight := 20
 
+	var prov provider.Provider
+	var pollInterval time.Duration
+	if cfg.Caddy.URL != "" {
+		prov = provider.NewCaddyClient(cfg.Caddy)
+		pollInterval = cfg.Caddy.PollInterval
+	} else {
+		prov = provider.NewTraefikClient(cfg.Traefik)
+		pollInterval = cfg.Traefik.PollInterval
+	}
+
 	m := &Model{
-		cfg:     cfg,
-		traefik: provider.NewTraefikClient(cfg.Traefik),
-		loading: true,
-		spinner: sp,
+		cfg:          cfg,
+		prov:         prov,
+		pollInterval: pollInterval,
+		loading:      true,
+		spinner:      sp,
 
 		routerTable: NewTable([]Column{
 			{Title: "RULE", Width: 40},
@@ -126,7 +138,7 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) pollTick() tea.Cmd {
-	return tea.Tick(m.cfg.Traefik.PollInterval, func(t time.Time) tea.Msg {
+	return tea.Tick(m.pollInterval, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
 }
@@ -135,21 +147,21 @@ func (m *Model) fetchData() tea.Cmd {
 	return func() tea.Msg {
 		msg := dataMsg{}
 
-		routers, err := m.traefik.Routers()
+		routers, err := m.prov.Routers()
 		if err != nil {
 			msg.err = err
 			return msg
 		}
 		msg.routers = routers
 
-		services, err := m.traefik.Services()
+		services, err := m.prov.Services()
 		if err != nil {
 			msg.err = err
 			return msg
 		}
 		msg.services = services
 
-		certs, _ := m.traefik.Certificates()
+		certs, _ := m.prov.Certificates()
 		msg.certs = certs
 
 		if m.dockerClient != nil {

@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Traefik TraefikConfig `mapstructure:"traefik"`
+	Caddy   CaddyConfig   `mapstructure:"caddy"`
 	Docker  DockerConfig  `mapstructure:"docker"`
 }
 
@@ -16,6 +17,12 @@ type TraefikConfig struct {
 	PollInterval     time.Duration `mapstructure:"poll_interval"`
 	Username         string        `mapstructure:"username"`
 	Password         string        `mapstructure:"password"`
+	CertificateFiles []string      `mapstructure:"certificate_files"`
+}
+
+type CaddyConfig struct {
+	URL              string        `mapstructure:"url"`
+	PollInterval     time.Duration `mapstructure:"poll_interval"`
 	CertificateFiles []string      `mapstructure:"certificate_files"`
 }
 
@@ -32,6 +39,7 @@ func Load() (*Config, error) {
 
 	v.SetDefault("traefik.url", "http://127.0.0.1:8080")
 	v.SetDefault("traefik.poll_interval", 5*time.Second)
+	v.SetDefault("caddy.poll_interval", 5*time.Second)
 	v.SetDefault("docker.socket", "/var/run/docker.sock")
 
 	_ = v.ReadInConfig()
